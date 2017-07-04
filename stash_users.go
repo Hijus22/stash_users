@@ -14,7 +14,7 @@ import (
 )
 
 var simulation, verbose, help bool
-var logPath, chost, bhost, token, uCrowdUsr, uCrowdPass, uBitUsr, uBitPass, uCredFile string
+var logPath, chost, bhost, token, cuser, cpass, buser, bpass, credFile string
 
 // Parses the arguments
 func init() {
@@ -40,16 +40,16 @@ func init() {
 
 	flag.StringVar(&logPath, "log", "", uLogPath)
 
-	flag.StringVar(&bhost, "host", "", uBHost)
-	flag.StringVar(&chost, "host", "", uCHost)
+	flag.StringVar(&bhost, "bhost", "", uBHost)
+	flag.StringVar(&chost, "chost", "", uCHost)
 
-	flag.StringVar(&chost, "cuser", "", uCrowdUsr)
-	flag.StringVar(&bhost, "cpass", "", uCrowdPass)
+	flag.StringVar(&cuser, "cuser", "", uCrowdUsr)
+	flag.StringVar(&cpass, "cpass", "", uCrowdPass)
 
-	flag.StringVar(&host, "buser", "", uBitUsr)
-	flag.StringVar(&host, "bpass", "", uBitPass)
+	flag.StringVar(&buser, "buser", "", uBitUsr)
+	flag.StringVar(&bpass, "bpass", "", uBitPass)
 
-	flag.StringVar(&host, "cred", "", uCredFile)
+	flag.StringVar(&credFile, "cred", "", uCredFile)
 
 	flag.Parse()
 
@@ -66,8 +66,8 @@ func checkArgs(bhost string, chost string, token string, logPath string, verbose
 		os.Exit(0)
 	}
 
-	if chost == "" || bhost == "" || token == "" || logPath == "" {
-		fmt.Println("Please provide the bhost, chost, and logPath\n")
+	if chost == "" || bhost == "" || logPath == "" {
+		fmt.Println("Please provide the Bitbucket host, Crowd host, and log Path\n")
 		fmt.Println(usage)
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -98,7 +98,7 @@ func main() {
 	users := usrutils.SetUsers()
 
 	// Request the User and Password for bitbucket stash query and crowd group removal
-	bitbucketCred, crowdCred := usrutils.GetCredentials(uBitUsr, uBitPass, uCrowdUsr, uCrowdPass, uCredFile)
+	bitbucketCred, crowdCred := usrutils.GetCredentials(buser, bpass, cuser, cpass, credFile)
 
 	client := &http.Client{}
 
