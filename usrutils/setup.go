@@ -43,7 +43,7 @@ func GetCredentials(busr string, bpass string, cusr string, cpass string, file s
 
 	bitbucket, crowd := GetCredentialsFromFile(file)
 
-	var aux string
+	var aux []string
 
 	//	Check if the usr:password retrieved from bitbucket is correct and asign it if no one was provided
 	//	as a command line argument
@@ -54,7 +54,7 @@ func GetCredentials(busr string, bpass string, cusr string, cpass string, file s
 			busr = aux[0]
 		}
 		if bpass == "" {
-			bpass == aux[1]
+			bpass = aux[1]
 		}
 	}
 
@@ -67,14 +67,15 @@ func GetCredentials(busr string, bpass string, cusr string, cpass string, file s
 			cusr = aux[0]
 		}
 		if cpass == "" {
-			cpass == aux[1]
+			cpass = aux[1]
 		}
 	}
 
 	// If user:password for bitbucket is still missing, then request it through command line
 	if busr == "" {
 		fmt.Printf("Enter Bitbucket username: ")
-		busr, _ := reader.ReadString('\n')
+		usr, _ := reader.ReadString('\n')
+		busr = usr
 	}
 
 	if bpass == "" {
@@ -84,34 +85,35 @@ func GetCredentials(busr string, bpass string, cusr string, cpass string, file s
 		if err != nil {
 			fmt.Println("An error occurred with the password...")
 			fmt.Println(err)
-			exit(1)
+			os.Exit(1)
 		}
 		bpass = string(bytes)
 	}
 
-	bitbucket = []byte(fmt.Sprintf("%s:%s", strings.TrimSpace(busr), strings.TrimSpace(bpass)))
-	encbit = base64.StdEncoding.EncodeToString(bitbucket)
+	bitbucketBytes := []byte(fmt.Sprintf("%s:%s", strings.TrimSpace(busr), strings.TrimSpace(bpass)))
+	encbit = base64.StdEncoding.EncodeToString(bitbucketBytes)
 
 	// If user:password for bitbucket is still missing, then request it through command line
 	if cusr == "" {
 		fmt.Printf("Enter Crowd username: ")
-		cusr, _ := reader.ReadString('\n')
+		usr, _ := reader.ReadString('\n')
+		cusr = usr
 	}
 
 	if cpass == "" {
 		fmt.Printf("Enter Crowd password: ")
-		bytes, err = gopass.GetPasswd()
+		bytes, err := gopass.GetPasswd()
 
 		if err != nil {
 			fmt.Println("An error occurred with the password...")
 			fmt.Println(err)
-			exit(1)
+			os.Exit(1)
 		}
 		cpass = string(bytes)
 	}
 
-	crowd = []byte(fmt.Sprintf("%s:%s", strings.TrimSpace(cusr), strings.TrimSpace(cpass)))
-	enccrowd = base64.StdEncoding.EncodeToString(crowd)
+	crowdBytes := []byte(fmt.Sprintf("%s:%s", strings.TrimSpace(cusr), strings.TrimSpace(cpass)))
+	enccrowd = base64.StdEncoding.EncodeToString(crowdBytes)
 
 	return encbit, enccrowd
 }
