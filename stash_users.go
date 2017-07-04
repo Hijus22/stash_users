@@ -43,8 +43,8 @@ func init() {
 	flag.StringVar(&bhost, "host", "", uBHost)
 	flag.StringVar(&chost, "host", "", uCHost)
 
-	flag.StringVar(&host, "cuser", "", uCrowdUsr)
-	flag.StringVar(&host, "cpass", "", uCrowdPass)
+	flag.StringVar(&chost, "cuser", "", uCrowdUsr)
+	flag.StringVar(&bhost, "cpass", "", uCrowdPass)
 
 	flag.StringVar(&host, "buser", "", uBitUsr)
 	flag.StringVar(&host, "bpass", "", uBitPass)
