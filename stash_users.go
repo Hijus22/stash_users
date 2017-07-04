@@ -4,62 +4,72 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/hijus22/modules"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/hijus22/stash_users/usrutils"
 )
 
 var simulation, verbose, help bool
-var logPath, host, token string
+var logPath, chost, bhost, token, uCrowdUsr, uCrowdPass, uBitUsr, uBitPass, uCredFile string
 
 // Parses the arguments
 func init() {
 	const (
-		uHelp    = "\tShow this help message and exit"
-		uVerbose = "\tExecute in verbose mode"
-		uSim     = "\tExecute in simulation mode"
-		uLogPath = "\tThe log path where the loggers will write to.\n\t\t\tExample: /var/etc/log/stash"
-		uHost    = "\tThe host url.\n\t\t\tExample: https://host.com"
-		uToken   = "\tThe token needed for the Crowd Api.\n\t\t\tExample: 'Basic xfg23gfjsf2=='"
+		uHelp      = "\tShow this help message and exit"
+		uVerbose   = "\tExecute in verbose mode"
+		uSim       = "\tExecute in simulation mode"
+		uLogPath   = "\tThe log path where the loggers will write to.\n\t\t\tExample: /var/etc/log/stash"
+		uBHost     = "\tThe Bitbucket host url.\n\t\t\tExample: https://host.com"
+		uCHost     = "\tThe Crowd host url.\n\t\t\tExample: https://host.com"
+		uBitUsr    = "\tThe Bitbucket user\n\t\t\tIf missing, and no credentials file is provided, it will be requested at runtime"
+		uBitPass   = "\tThe password for Bitbucket\n\t\t\tIf missing, and no credentials file is provided, it will be requested at runtime"
+		uCrowdUsr  = "\tThe Crowd user\n\t\t\tIf missing, and no credentials file is provided, it will be requested at runtime"
+		uCrowdPass = "\tThe password for Crowd\n\t\t\tIf missing, and no credentials file is provided, it will be requested at runtime"
+		uCredFile  = "\tA file containing the credentials for Bitbucket and Crowd\n\t\t\tEvery line must have the following structure (2 columns): {Bitbucket | Crowd} user:password\n\t\t\tIf there are any parameters missing, they will be requested at runtime"
 	)
 
 	flag.BoolVar(&help, "help", false, uHelp)
-	flag.BoolVar(&help, "h", false, uHelp+"(shorthand)")
 
-	flag.BoolVar(&verbose, "verbose", false, uVerbose)
-	flag.BoolVar(&verbose, "v", false, uVerbose+"(shorthand)")
+	flag.BoolVar(&verbose, "v", false, uVerbose)
 
-	flag.BoolVar(&simulation, "simulation", true, uSim)      // CARE IT DEFAULTS TO TRUE!!
-	flag.BoolVar(&simulation, "s", true, uSim+"(shorthand)") // CARE IT DEFAULTS TO TRUE!!
+	flag.BoolVar(&simulation, "s", true, uSim) // CARE IT DEFAULTS TO TRUE!!
 
 	flag.StringVar(&logPath, "log", "", uLogPath)
-	flag.StringVar(&logPath, "l", "", uLogPath+"(shorthand)")
 
-	flag.StringVar(&host, "api", "", uHost)
-	flag.StringVar(&host, "a", "", uHost+"(shorthand)")
+	flag.StringVar(&bhost, "host", "", uBHost)
+	flag.StringVar(&chost, "host", "", uCHost)
 
-	flag.StringVar(&token, "token", "", uToken)
-	flag.StringVar(&token, "t", "", uToken+"(shorthand)")
+	flag.StringVar(&host, "cuser", "", uCrowdUsr)
+	flag.StringVar(&host, "cpass", "", uCrowdPass)
+
+	flag.StringVar(&host, "buser", "", uBitUsr)
+	flag.StringVar(&host, "bpass", "", uBitPass)
+
+	flag.StringVar(&host, "cred", "", uCredFile)
 
 	flag.Parse()
 
 }
 
 // Check if the required arguments are present
-func checkArgs(host string, token string, logPath string, verbose bool, help bool) {
+func checkArgs(bhost string, chost string, token string, logPath string, verbose bool, help bool) {
+	usage := "usage: stash_users [--help|-h] [-v] [-s] --log LOGPATH\n
+				\t\t[ [--cuser CROWD_USER] [--cpass CROWD_PASS] [--buser CROWD_USER] [--bpass CROWD_PASS] | [--cred CRED_FILE] ]"
+	
 	if len(os.Args) == 1 || help {
-		fmt.Println("usage: stash_users [--help|-h] [--verbose|-v] [--simulation|-s] --api|-a HOST --token|-t TOKEN --log|-l LOGPATH\n")
+		fmt.Println(usage)
 		flag.PrintDefaults()
 
 		os.Exit(0)
 	}
 
-	if host == "" || token == "" || logPath == "" {
-		fmt.Println("Please provide a host, token and logPath\n")
-		fmt.Println("usage: stash_users [--help|-h] [--verbose|-v] [--simulation|-s] --api|-a HOST --token|-t TOKEN --log|-l LOGPATH\n")
+	if chost == "" || bhost == "" || token == "" || logPath == "" {
+		fmt.Println("Please provide the bhost, chost, and logPath\n")
+		fmt.Println(usage)
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -67,10 +77,10 @@ func checkArgs(host string, token string, logPath string, verbose bool, help boo
 
 func main() {
 
-	checkArgs(host, token, logPath, verbose, help)
+	checkArgs(bhost, chost, token, logPath, verbose, help)
 
 	// Sets up the different logging levels
-	Info, Trace, Warning, Error, file := usr.SetLoggers(logPath, simulation)
+	Info, Trace, Warning, Error, file := usrutils.SetLoggers(logPath, simulation)
 
 	defer file.Close()
 	defer fmt.Println("Logs available at:", file.Name())
@@ -86,10 +96,10 @@ func main() {
 	now := time.Now()
 
 	// Initialize the user arrays
-	users := usr.SetUsers()
+	users := usrutils.SetUsers()
 
-	// Request the User and Password for bitbucket stash query
-	cred := usr.GetCredentials()
+	// Request the User and Password for bitbucket stash query and crowd group removal
+	bitbucketCred, crowdCred := usrutils.GetCredentials(uBitUsr, uBitPass, uCrowdUsr, uCrowdPass, uCredFile)
 
 	client := &http.Client{}
 
@@ -102,8 +112,8 @@ func main() {
 	for !isLastPage {
 		url := fmt.Sprintf("/bitbucket/rest/api/1.0/admin/groups/more-members?context=stash-users&limit=%d&start=%d", pageSize, start)
 
-		req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", host, url), nil)
-		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", cred))
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", bhost, url), nil)
+		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", bitbucketCred))
 
 		fmt.Println("--> Requesting", pageSize, "users...")
 
@@ -123,7 +133,7 @@ func main() {
 				panic(err.Error())
 			}
 
-			var r = usr.Response{}
+			var r = usrutils.Response{}
 			err = json.Unmarshal(body, &r)
 			isLastPage = r.IsLastPage
 			start += pageSize
@@ -199,9 +209,9 @@ func main() {
 	fmt.Println("Deactivating users in Crowd")
 	Info.Println("Deactivating users in Crowd")
 
-	loggers := usr.Loggers{Info, Trace, Warning, Error}
+	loggers := usrutils.Loggers{Info, Trace, Warning, Error}
 
-	usr.DeactivateUsers(host, users[":none"], token, &loggers, verbose, simulation)
+	usrutils.DeactivateUsers(chost, users[":none"], crowdCred, &loggers, verbose, simulation)
 
 	Info.Println("Done")
 
