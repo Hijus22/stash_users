@@ -5,7 +5,7 @@ How to use:
 
 ```
 usage: stash_users [--help|-h] [-v] [-s] --log LOGPATH
-                [ [--cuser CROWD_USER] [--cpass CROWD_PASS] [--buser CROWD_USER] [--bpass CROWD_PASS] | [--cred CRED_FILE] ]
+                [ [--cuser CROWD_USER] [--cpass CROWD_PASS] [--buser BITBUCKET_USER] [--bpass BITBUCKET_PASS] | [--cred CRED_FILE] ]
   -bhost string
                 The Bitbucket host url.
                         Example: https://host.com
