@@ -57,7 +57,7 @@ func init() {
 
 // Check if the required arguments are present
 func checkArgs(bhost string, chost string, token string, logPath string, verbose bool, help bool) {
-	usage := "usage: stash_users [--help|-h] [-v] [-s] --log LOGPATH\n\t\t[ [--cuser CROWD_USER] [--cpass CROWD_PASS] [--buser CROWD_USER] [--bpass CROWD_PASS] | [--cred CRED_FILE] ]"
+	usage := "usage: stash_users [--help|-h] [-v] [-s] --log LOGPATH\n\t\t[ [--cuser CROWD_USER] [--cpass CROWD_PASS] [--buser BITBUCKET_USER] [--bpass BITBUCKET_PASS] | [--cred CRED_FILE] ]"
 
 	if len(os.Args) == 1 || help {
 		fmt.Println(usage)
